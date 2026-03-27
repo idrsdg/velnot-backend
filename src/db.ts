@@ -28,7 +28,16 @@ export function initDb(): void {
       device_id     TEXT,
       instance_id   TEXT,
       activated_at  INTEGER NOT NULL,
-      expires_at    INTEGER
+      expires_at    INTEGER,
+      email         TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS auth_tokens (
+      token      TEXT PRIMARY KEY,
+      email      TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      used       INTEGER NOT NULL DEFAULT 0
     );
   `);
 
@@ -65,6 +74,7 @@ export interface LicenseRow {
   instance_id: string | null;
   activated_at: number;
   expires_at: number | null;
+  email: string | null;
 }
 
 export function getLicense(licenseKey: string): LicenseRow | undefined {
@@ -73,17 +83,49 @@ export function getLicense(licenseKey: string): LicenseRow | undefined {
 
 export function upsertLicense(row: Omit<LicenseRow, 'activated_at'> & { activated_at?: number }): void {
   db.prepare(`
-    INSERT INTO licenses (license_key, plan, status, device_id, instance_id, activated_at, expires_at)
-    VALUES (@license_key, @plan, @status, @device_id, @instance_id, @activated_at, @expires_at)
+    INSERT INTO licenses (license_key, plan, status, device_id, instance_id, activated_at, expires_at, email)
+    VALUES (@license_key, @plan, @status, @device_id, @instance_id, @activated_at, @expires_at, @email)
     ON CONFLICT(license_key) DO UPDATE SET
       plan        = excluded.plan,
       status      = excluded.status,
       device_id   = excluded.device_id,
       instance_id = excluded.instance_id,
-      expires_at  = excluded.expires_at
-  `).run({ activated_at: Date.now(), ...row });
+      expires_at  = excluded.expires_at,
+      email       = COALESCE(excluded.email, licenses.email)
+  `).run({ activated_at: Date.now(), email: null, ...row });
 }
 
 export function setLicenseStatus(licenseKey: string, status: string): void {
   db.prepare('UPDATE licenses SET status = ? WHERE license_key = ?').run(status, licenseKey);
+}
+
+export function setLicenseEmail(licenseKey: string, email: string): void {
+  db.prepare('UPDATE licenses SET email = ? WHERE license_key = ?').run(email, licenseKey);
+}
+
+export function getLicenseByEmail(email: string): LicenseRow | undefined {
+  return db.prepare('SELECT * FROM licenses WHERE email = ? AND status = \'active\'').get(email) as LicenseRow | undefined;
+}
+
+// ── Auth token helpers ────────────────────────────────────────────────────────
+
+export interface AuthTokenRow {
+  token: string;
+  email: string;
+  created_at: number;
+  expires_at: number;
+  used: number;
+}
+
+export function insertAuthToken(token: string, email: string, expiresAt: number): void {
+  const now = Date.now();
+  db.prepare('INSERT INTO auth_tokens (token, email, created_at, expires_at, used) VALUES (?, ?, ?, ?, 0)').run(token, email, now, expiresAt);
+}
+
+export function getAuthToken(token: string): AuthTokenRow | undefined {
+  return db.prepare('SELECT * FROM auth_tokens WHERE token = ?').get(token) as AuthTokenRow | undefined;
+}
+
+export function markAuthTokenUsed(token: string): void {
+  db.prepare('UPDATE auth_tokens SET used = 1 WHERE token = ?').run(token);
 }

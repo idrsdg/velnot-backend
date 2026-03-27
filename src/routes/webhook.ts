@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'node:crypto';
-import { upsertLicense, setLicenseStatus } from '../db';
+import { upsertLicense, setLicenseStatus, setLicenseEmail } from '../db';
 
 const router = Router();
 
@@ -51,6 +51,11 @@ router.post('/lemonsqueezy', (req: Request, res: Response) => {
     plan === 'yearly'  ? Date.now() + 366 * 24 * 60 * 60 * 1000 :
     null;
 
+  const customerEmail: string = attrs.user_email
+    ?? attrs.customer_email
+    ?? payload?.meta?.customer_email
+    ?? '';
+
   switch (event) {
     case 'order_created':
     case 'subscription_created':
@@ -61,12 +66,13 @@ router.post('/lemonsqueezy', (req: Request, res: Response) => {
         device_id: null,
         instance_id: null,
         expires_at,
+        email: customerEmail || null,
       });
       break;
 
     case 'subscription_updated':
       if (status === 'active' || status === 'on_trial') {
-        upsertLicense({ license_key: licenseKey, plan, status: 'active', device_id: null, instance_id: null, expires_at });
+        upsertLicense({ license_key: licenseKey, plan, status: 'active', device_id: null, instance_id: null, expires_at, email: customerEmail || null });
       } else {
         setLicenseStatus(licenseKey, 'cancelled');
       }
@@ -84,7 +90,12 @@ router.post('/lemonsqueezy', (req: Request, res: Response) => {
       break;
   }
 
-  console.log(`Webhook [${event}] — license: ${licenseKey} plan: ${plan}`);
+  // Ensure email is saved even for status-only events
+  if (customerEmail) {
+    setLicenseEmail(licenseKey, customerEmail);
+  }
+
+  console.log(`Webhook [${event}] — license: ${licenseKey} plan: ${plan} email: ${customerEmail}`);
   res.status(200).json({ ok: true });
 });
 

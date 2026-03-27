@@ -7,6 +7,7 @@ import summarizeRouter from './routes/summarize';
 import licenseRouter from './routes/license';
 import usageRouter from './routes/usage';
 import webhookRouter from './routes/webhook';
+import authRouter from './routes/auth';
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(express.json());
 app.use('/api/summarize', summarizeRouter);
 app.use('/api/license', licenseRouter);
 app.use('/api/usage', usageRouter);
+app.use('/api/auth', authRouter);
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
