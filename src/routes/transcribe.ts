@@ -42,7 +42,6 @@ async function transcribeAudio(
     body: JSON.stringify({
       audio_url: upload_url,
       speaker_labels: true,
-      speech_models: 'best',
       speakers_expected: 2,
       ...(lang ? { language_code: lang } : {}),
     }),
