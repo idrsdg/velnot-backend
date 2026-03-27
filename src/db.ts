@@ -81,7 +81,7 @@ export function getLicense(licenseKey: string): LicenseRow | undefined {
   return db.prepare('SELECT * FROM licenses WHERE license_key = ?').get(licenseKey) as LicenseRow | undefined;
 }
 
-export function upsertLicense(row: Omit<LicenseRow, 'activated_at'> & { activated_at?: number }): void {
+export function upsertLicense(row: Omit<LicenseRow, 'activated_at' | 'email'> & { activated_at?: number; email?: string | null }): void {
   db.prepare(`
     INSERT INTO licenses (license_key, plan, status, device_id, instance_id, activated_at, expires_at, email)
     VALUES (@license_key, @plan, @status, @device_id, @instance_id, @activated_at, @expires_at, @email)
