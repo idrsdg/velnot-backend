@@ -40,7 +40,7 @@ router.post('/request-magic-link', async (req: Request, res: Response) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Velnot <noreply@velnot.com>',
+            from: 'Velnot <onboarding@resend.dev>',
             to: [normalizedEmail],
             subject: "Velnot'a giriş linkin",
             html: `
