@@ -109,10 +109,12 @@ router.post('/chunk', requireAuth, async (req: Request, res: Response) => {
     }
 
     const language = (req.headers['x-language'] as string) || 'tr';
-    const OpenAI = (await import('openai')).default;
+    const openaiModule = await import('openai');
+    const OpenAI = openaiModule.default;
+    const { toFile } = openaiModule;
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const file = new File([req.body], 'audio.webm', { type: 'audio/webm' });
+    const file = await toFile(req.body, 'audio.webm', { type: 'audio/webm' });
 
     const response = await client.audio.transcriptions.create({
       file,
