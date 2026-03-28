@@ -9,6 +9,7 @@ import usageRouter from './routes/usage';
 import webhookRouter from './routes/webhook';
 import authRouter from './routes/auth';
 import downloadRouter from './routes/download';
+import adminRouter from './routes/admin';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/usage', usageRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/download-request', downloadRouter);
 
+app.use('/api/admin', adminRouter);
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
 initDb();
