@@ -43,7 +43,6 @@ async function transcribeAudio(
       audio_url: upload_url,
       speech_models: ['universal-2'],
       speaker_labels: true,
-      speakers_expected: 2,
       ...(lang ? { language_code: lang } : {}),
     }),
   });
