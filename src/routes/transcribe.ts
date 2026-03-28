@@ -112,12 +112,10 @@ router.post('/chunk', requireAuth, async (req: Request, res: Response) => {
     const OpenAI = (await import('openai')).default;
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const { Readable } = await import('node:stream');
-    const audioStream = Readable.from(req.body);
-    (audioStream as any).name = 'audio.webm';
+    const file = new File([req.body], 'audio.webm', { type: 'audio/webm' });
 
     const response = await client.audio.transcriptions.create({
-      file: audioStream as any,
+      file,
       model: 'whisper-1',
       ...(language !== 'auto' ? { language } : {}),
     });
