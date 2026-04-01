@@ -14,6 +14,13 @@ router.post('/activate', async (req: Request, res: Response) => {
       return;
     }
 
+    // Admin key bypass
+    const adminKey = process.env.ADMIN_KEY;
+    if (adminKey && license_key === adminKey) {
+      res.json({ success: true, plan: 'lifetime', expires_at: null });
+      return;
+    }
+
     // Validate with Lemon Squeezy
     const instance_name = `velnot-${device_id.slice(0, 8)}-${Date.now()}`;
     const lsRes = await fetch('https://api.lemonsqueezy.com/v1/licenses/activate', {
