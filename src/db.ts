@@ -41,6 +41,17 @@ export function initDb(): void {
     );
   `);
 
+  // Owner license: if OWNER_LICENSE_KEY env var is set, always upsert a lifetime license
+  const ownerKey = process.env.OWNER_LICENSE_KEY;
+  if (ownerKey) {
+    db.prepare(`
+      INSERT INTO licenses (license_key, plan, status, device_id, instance_id, activated_at, expires_at, email)
+      VALUES (?, 'lifetime', 'active', NULL, NULL, ?, NULL, NULL)
+      ON CONFLICT(license_key) DO UPDATE SET plan='lifetime', status='active', expires_at=NULL
+    `).run(ownerKey, Date.now());
+    console.log('Owner license upserted.');
+  }
+
   console.log('DB initialized:', DB_PATH);
 }
 
