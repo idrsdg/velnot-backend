@@ -15,13 +15,6 @@ router.get('/', (req: Request, res: Response) => {
     return;
   }
 
-  // Admin bypass
-  const adminKey = process.env.ADMIN_KEY;
-  if (adminKey && licenseKey === adminKey) {
-    res.json({ plan: 'lifetime', used: 0, limit: -1, remaining: -1, valid: true });
-    return;
-  }
-
   const device = getOrCreateDevice(deviceId);
 
   if (licenseKey) {
