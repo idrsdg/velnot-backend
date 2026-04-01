@@ -27,6 +27,21 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   }
 
   const licenseKey = (req.headers['x-license-key'] as string | undefined) ?? null;
+
+  // Admin bypass: if license key matches ADMIN_KEY env var, grant unlimited access
+  const adminKey = process.env.ADMIN_KEY;
+  if (adminKey && licenseKey === adminKey) {
+    req.auth = {
+      deviceId,
+      licenseKey,
+      plan: 'lifetime',
+      sessionsUsed: 0,
+      limit: -1,
+    };
+    next();
+    return;
+  }
+
   const device = getOrCreateDevice(deviceId);
 
   // Paid license check
