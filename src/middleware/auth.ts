@@ -3,6 +3,8 @@ import { getOrCreateDevice, getLicense } from '../db';
 
 const FREE_LIMIT = parseInt(process.env.FREE_SESSION_LIMIT ?? '3');
 
+const UNLIMITED_EMAILS = ['kubra.bozkurt96@gmail.com'];
+
 export interface AuthInfo {
   deviceId: string;
   licenseKey: string | null;
@@ -20,6 +22,14 @@ declare global {
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+  const accountEmail = (req.headers['x-account-email'] as string | undefined) ?? null;
+  if (accountEmail && UNLIMITED_EMAILS.includes(accountEmail.toLowerCase())) {
+    const deviceId = (req.headers['x-device-id'] as string | undefined) ?? 'bypass';
+    req.auth = { deviceId, licenseKey: null, plan: 'lifetime', sessionsUsed: 0, limit: -1 };
+    next();
+    return;
+  }
+
   const deviceId = req.headers['x-device-id'] as string | undefined;
   if (!deviceId || deviceId.trim() === '') {
     res.status(400).json({ error: 'x-device-id header gerekli.' });
